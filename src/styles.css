@@ -1,0 +1,168 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--border);
+  --color-ring: var(--accent);
+
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-foreground);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-tint: var(--accent-tint);
+
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: #ffffff;
+}
+
+:root {
+  --background: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f4;
+  --foreground: #0f0f0f;
+  --muted: #f4f4f4;
+  --muted-foreground: #6b6b6b;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.18);
+
+  --accent: #f59e0b;
+  --accent-foreground: #1a1305;
+  --accent-tint: rgba(245, 158, 11, 0.08);
+
+  --success: #16a34a;
+  --success-tint: rgba(22, 163, 74, 0.10);
+  --danger: #dc2626;
+  --danger-tint: rgba(220, 38, 38, 0.10);
+  --warning: #d97706;
+  --warning-tint: rgba(217, 119, 6, 0.12);
+
+  --shadow-lift: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  --background: #0f0f0f;
+  --surface: #161616;
+  --surface-2: #1d1d1d;
+  --foreground: #f5f5f5;
+  --muted: #1d1d1d;
+  --muted-foreground: #9a9a9a;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.22);
+
+  --accent: #fbbf24;
+  --accent-foreground: #1a1305;
+  --accent-tint: rgba(251, 191, 36, 0.10);
+
+  --success: #4ade80;
+  --success-tint: rgba(74, 222, 128, 0.12);
+  --danger: #f87171;
+  --danger-tint: rgba(248, 113, 113, 0.14);
+  --warning: #fbbf24;
+  --warning-tint: rgba(251, 191, 36, 0.14);
+
+  --shadow-lift: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 500;
+    letter-spacing: -0.011em;
+  }
+  ::selection {
+    background: var(--accent-tint);
+  }
+}
+
+@utility lift-hover {
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+    border-color: var(--border-strong);
+  }
+}
+
+@utility btn-press {
+  transition: background-color 100ms ease, transform 100ms ease, border-color 100ms ease, color 100ms ease;
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent);
+    border-color: var(--accent);
+  }
+}
+
+@utility fade-in-soft {
+  animation: qf-fade-in 180ms ease-out both;
+}
+
+@utility shake-x {
+  animation: qf-shake 300ms ease-out;
+}
+
+@utility pulse-soft {
+  animation: qf-pulse 1s ease-in-out infinite;
+}
+
+@keyframes qf-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes qf-shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+@keyframes qf-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
