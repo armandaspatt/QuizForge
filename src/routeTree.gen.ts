@@ -9,21 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ImportRouteImport } from './routes/import'
-import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TestAttemptIdRouteImport } from './routes/test.$attemptId'
-import { Route as ResultsAttemptIdRouteImport } from './routes/results.$attemptId'
-import { Route as ConfigureSetIdRouteImport } from './routes/configure.$setId'
+import { Route as AuthedSetsRouteImport } from './routes/_authed.sets'
+import { Route as AuthedImportRouteImport } from './routes/_authed.import'
+import { Route as AuthedDashboardRouteImport } from './routes/_authed.dashboard'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthedTestAttemptIdRouteImport } from './routes/_authed.test.$attemptId'
+import { Route as AuthedResultsAttemptIdRouteImport } from './routes/_authed.results.$attemptId'
+import { Route as AuthedConfigureSetIdRouteImport } from './routes/_authed.configure.$setId'
 
-const ImportRoute = ImportRouteImport.update({
-  id: '/import',
-  path: '/import',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,97 +34,135 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TestAttemptIdRoute = TestAttemptIdRouteImport.update({
+const AuthedSetsRoute = AuthedSetsRouteImport.update({
+  id: '/sets',
+  path: '/sets',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedImportRoute = AuthedImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedDashboardRoute = AuthedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedTestAttemptIdRoute = AuthedTestAttemptIdRouteImport.update({
   id: '/test/$attemptId',
   path: '/test/$attemptId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthedRoute,
 } as any)
-const ResultsAttemptIdRoute = ResultsAttemptIdRouteImport.update({
+const AuthedResultsAttemptIdRoute = AuthedResultsAttemptIdRouteImport.update({
   id: '/results/$attemptId',
   path: '/results/$attemptId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthedRoute,
 } as any)
-const ConfigureSetIdRoute = ConfigureSetIdRouteImport.update({
+const AuthedConfigureSetIdRoute = AuthedConfigureSetIdRouteImport.update({
   id: '/configure/$setId',
   path: '/configure/$setId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/import': typeof ImportRoute
-  '/configure/$setId': typeof ConfigureSetIdRoute
-  '/results/$attemptId': typeof ResultsAttemptIdRoute
-  '/test/$attemptId': typeof TestAttemptIdRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof AuthedDashboardRoute
+  '/import': typeof AuthedImportRoute
+  '/sets': typeof AuthedSetsRoute
+  '/configure/$setId': typeof AuthedConfigureSetIdRoute
+  '/results/$attemptId': typeof AuthedResultsAttemptIdRoute
+  '/test/$attemptId': typeof AuthedTestAttemptIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/import': typeof ImportRoute
-  '/configure/$setId': typeof ConfigureSetIdRoute
-  '/results/$attemptId': typeof ResultsAttemptIdRoute
-  '/test/$attemptId': typeof TestAttemptIdRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof AuthedDashboardRoute
+  '/import': typeof AuthedImportRoute
+  '/sets': typeof AuthedSetsRoute
+  '/configure/$setId': typeof AuthedConfigureSetIdRoute
+  '/results/$attemptId': typeof AuthedResultsAttemptIdRoute
+  '/test/$attemptId': typeof AuthedTestAttemptIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/import': typeof ImportRoute
-  '/configure/$setId': typeof ConfigureSetIdRoute
-  '/results/$attemptId': typeof ResultsAttemptIdRoute
-  '/test/$attemptId': typeof TestAttemptIdRoute
+  '/_authed': typeof AuthedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authed/dashboard': typeof AuthedDashboardRoute
+  '/_authed/import': typeof AuthedImportRoute
+  '/_authed/sets': typeof AuthedSetsRoute
+  '/_authed/configure/$setId': typeof AuthedConfigureSetIdRoute
+  '/_authed/results/$attemptId': typeof AuthedResultsAttemptIdRoute
+  '/_authed/test/$attemptId': typeof AuthedTestAttemptIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/dashboard'
     | '/import'
+    | '/sets'
     | '/configure/$setId'
     | '/results/$attemptId'
     | '/test/$attemptId'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/dashboard'
     | '/import'
+    | '/sets'
     | '/configure/$setId'
     | '/results/$attemptId'
     | '/test/$attemptId'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
-    | '/import'
-    | '/configure/$setId'
-    | '/results/$attemptId'
-    | '/test/$attemptId'
+    | '/_authed'
+    | '/login'
+    | '/_authed/dashboard'
+    | '/_authed/import'
+    | '/_authed/sets'
+    | '/_authed/configure/$setId'
+    | '/_authed/results/$attemptId'
+    | '/_authed/test/$attemptId'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
-  ImportRoute: typeof ImportRoute
-  ConfigureSetIdRoute: typeof ConfigureSetIdRoute
-  ResultsAttemptIdRoute: typeof ResultsAttemptIdRoute
-  TestAttemptIdRoute: typeof TestAttemptIdRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/import': {
-      id: '/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof ImportRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -131,37 +172,84 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/test/$attemptId': {
-      id: '/test/$attemptId'
+    '/_authed/sets': {
+      id: '/_authed/sets'
+      path: '/sets'
+      fullPath: '/sets'
+      preLoaderRoute: typeof AuthedSetsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/import': {
+      id: '/_authed/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AuthedImportRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/dashboard': {
+      id: '/_authed/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthedDashboardRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authed/test/$attemptId': {
+      id: '/_authed/test/$attemptId'
       path: '/test/$attemptId'
       fullPath: '/test/$attemptId'
-      preLoaderRoute: typeof TestAttemptIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedTestAttemptIdRouteImport
+      parentRoute: typeof AuthedRoute
     }
-    '/results/$attemptId': {
-      id: '/results/$attemptId'
+    '/_authed/results/$attemptId': {
+      id: '/_authed/results/$attemptId'
       path: '/results/$attemptId'
       fullPath: '/results/$attemptId'
-      preLoaderRoute: typeof ResultsAttemptIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedResultsAttemptIdRouteImport
+      parentRoute: typeof AuthedRoute
     }
-    '/configure/$setId': {
-      id: '/configure/$setId'
+    '/_authed/configure/$setId': {
+      id: '/_authed/configure/$setId'
       path: '/configure/$setId'
       fullPath: '/configure/$setId'
-      preLoaderRoute: typeof ConfigureSetIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedConfigureSetIdRouteImport
+      parentRoute: typeof AuthedRoute
     }
   }
 }
 
+interface AuthedRouteChildren {
+  AuthedDashboardRoute: typeof AuthedDashboardRoute
+  AuthedImportRoute: typeof AuthedImportRoute
+  AuthedSetsRoute: typeof AuthedSetsRoute
+  AuthedConfigureSetIdRoute: typeof AuthedConfigureSetIdRoute
+  AuthedResultsAttemptIdRoute: typeof AuthedResultsAttemptIdRoute
+  AuthedTestAttemptIdRoute: typeof AuthedTestAttemptIdRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedDashboardRoute: AuthedDashboardRoute,
+  AuthedImportRoute: AuthedImportRoute,
+  AuthedSetsRoute: AuthedSetsRoute,
+  AuthedConfigureSetIdRoute: AuthedConfigureSetIdRoute,
+  AuthedResultsAttemptIdRoute: AuthedResultsAttemptIdRoute,
+  AuthedTestAttemptIdRoute: AuthedTestAttemptIdRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
-  ImportRoute: ImportRoute,
-  ConfigureSetIdRoute: ConfigureSetIdRoute,
-  ResultsAttemptIdRoute: ResultsAttemptIdRoute,
-  TestAttemptIdRoute: TestAttemptIdRoute,
+  AuthedRoute: AuthedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
