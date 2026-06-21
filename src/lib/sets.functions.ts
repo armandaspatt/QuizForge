@@ -121,3 +121,10 @@ function rowToSet(row: SetRow): QuestionSet {
 // Re-exported so route files that only need the type don't have to reach
 // into ./db/schema directly.
 export type { Question, QuestionSet };
+
+// Aliases with an explicit "Authed" suffix, used by `local-data.ts` so it's
+// unambiguous at the call site that these always require a session (as
+// opposed to the anonymous/local-storage path it falls back to).
+export const createSetAuthed = createSet;
+export const getSetAuthed = getSet;
+export const deleteSetAuthed = deleteSet;

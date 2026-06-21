@@ -279,3 +279,10 @@ function rowToAttempt(row: typeof attempts.$inferSelect): Attempt {
     timeRemainingMs: row.timeRemainingMs ?? undefined,
   };
 }
+
+// Aliases with an explicit "Authed" suffix, used by `local-data.ts` so it's
+// unambiguous at the call site that these always require a session.
+export const startAttemptAuthed = startAttempt;
+export const saveAttemptProgressAuthed = saveAttemptProgress;
+export const finishAttemptAuthed = finishAttempt;
+export const getAttemptAuthed = getAttempt;

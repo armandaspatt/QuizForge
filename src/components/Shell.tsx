@@ -19,13 +19,23 @@ export function Shell({ children }: { children: ReactNode }) {
       <header className="mx-auto flex max-w-3xl items-center justify-between px-6 pt-6 pb-3">
         <Wordmark />
         <nav className="flex items-center gap-1 text-[13px] text-muted-foreground">
-          <Link
-            to="/dashboard"
-            className="btn-press rounded-md px-2.5 py-1.5 hover:text-foreground hover:bg-[color-mix(in_oklab,var(--accent)_4%,transparent)]"
-            activeProps={{ className: "text-foreground" }}
-          >
-            Dashboard
-          </Link>
+          {session?.user ? (
+            <Link
+              to="/dashboard"
+              className="btn-press rounded-md px-2.5 py-1.5 hover:text-foreground hover:bg-[color-mix(in_oklab,var(--accent)_4%,transparent)]"
+              activeProps={{ className: "text-foreground" }}
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="btn-press rounded-md px-2.5 py-1.5 hover:text-foreground hover:bg-[color-mix(in_oklab,var(--accent)_4%,transparent)]"
+              activeProps={{ className: "text-foreground" }}
+            >
+              Sign in
+            </Link>
+          )}
           <ThemeToggle />
           {session?.user && (
             <button

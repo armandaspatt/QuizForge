@@ -7,15 +7,18 @@ import { Slider } from "@/components/Slider";
 import { Toggle } from "@/components/Toggle";
 import { Section, Row } from "@/components/Field";
 import { defaultRules, type QuestionSet, type TestRules } from "@/lib/types";
-import { getSet } from "@/lib/sets.functions";
-import { startAttempt } from "@/lib/attempts.functions";
+import { loadQuestionSet, startQuizAttempt } from "@/lib/local-data";
+import { useSession } from "@/lib/auth-client";
 import { uid } from "@/lib/store";
 
-export const Route = createFileRoute("/_authed/configure/$setId")({
+export const Route = createFileRoute("/configure/$setId")({
   head: () => ({
     meta: [
       { title: "Configure test — TestBench" },
-      { name: "description", content: "Set the timing, marking, hints and feedback rules for your test." },
+      {
+        name: "description",
+        content: "Set the timing, marking, hints and feedback rules for your test.",
+      },
     ],
   }),
   component: Configure,
@@ -24,24 +27,26 @@ export const Route = createFileRoute("/_authed/configure/$setId")({
 function Configure() {
   const { setId } = Route.useParams();
   const navigate = useNavigate();
+  const { data: session, isPending } = useSession();
   const [set, setSet] = useState<QuestionSet | null>(null);
   const [rules, setRules] = useState<TestRules | null>(null);
 
   useEffect(() => {
-    getSet({ data: { id: setId } }).then((s) => {
+    if (isPending) return;
+    loadQuestionSet(!!session?.user, setId).then((s) => {
       if (s) {
         setSet(s);
         setRules(defaultRules(s.questions.length));
       }
     });
-  }, [setId]);
+  }, [setId, isPending, session?.user]);
 
   const maxScore = useMemo(() => {
     if (!rules) return 0;
     return rules.marking.correct * rules.questionCount;
   }, [rules]);
 
-  if (!set || !rules) {
+  if (isPending || !set || !rules) {
     return (
       <Shell>
         <div className="pt-10 text-[13px] text-muted-foreground">Loading...</div>
@@ -54,8 +59,11 @@ function Configure() {
   const start = async () => {
     const ids = set.questions.slice(0, rules.questionCount).map((q) => q.id);
     const clientAttemptId = uid();
-    const attempt = await startAttempt({
-      data: { clientAttemptId, setId: set.id, rules, questionIds: ids },
+    const attempt = await startQuizAttempt(!!session?.user, {
+      clientAttemptId,
+      setId: set.id,
+      rules,
+      questionIds: ids,
     });
     navigate({ to: "/test/$attemptId", params: { attemptId: attempt.id } });
   };
@@ -101,7 +109,9 @@ function Configure() {
             <Row label="Per question" hint="Timer resets on each question.">
               <Slider
                 value={rules.timing.perQuestionSeconds}
-                onChange={(v) => update({ timing: { mode: "per-question", perQuestionSeconds: v } })}
+                onChange={(v) =>
+                  update({ timing: { mode: "per-question", perQuestionSeconds: v } })
+                }
                 min={5}
                 max={180}
                 step={5}
@@ -158,7 +168,18 @@ function Configure() {
               <Row label="Penalty" hint="How using a hint is penalised.">
                 <SegmentedControl
                   value={rules.hints.penalty}
-                  onChange={(v) => update({ hints: { ...rules.hints, penalty: v, penaltyAmount: v === "none" ? 0 : rules.hints.penaltyAmount || (v === "time" ? 10 : 0.25) } })}
+                  onChange={(v) =>
+                    update({
+                      hints: {
+                        ...rules.hints,
+                        penalty: v,
+                        penaltyAmount:
+                          v === "none"
+                            ? 0
+                            : rules.hints.penaltyAmount || (v === "time" ? 10 : 0.25),
+                      },
+                    })
+                  }
                   options={[
                     { value: "none", label: "None" },
                     { value: "time", label: "Time" },
@@ -194,7 +215,10 @@ function Configure() {
         </Section>
 
         <Section title="Feedback">
-          <Row label="When to reveal correctness" hint="Real-time shows after each answer; end shows on results only.">
+          <Row
+            label="When to reveal correctness"
+            hint="Real-time shows after each answer; end shows on results only."
+          >
             <SegmentedControl
               value={rules.feedback}
               onChange={(v) => update({ feedback: v })}

@@ -7,15 +7,19 @@ import { SegmentedControl } from "@/components/SegmentedControl";
 import { Slider } from "@/components/Slider";
 import { parseQA } from "@/lib/parse";
 import { generateQuestions, extractFromText, extractFromUrl } from "@/lib/openai";
-import { createSet } from "@/lib/sets.functions";
+import { saveQuestionSet } from "@/lib/local-data";
+import { useSession } from "@/lib/auth-client";
 import { RichText } from "@/components/RichText";
 import type { Question } from "@/lib/types";
 
-export const Route = createFileRoute("/_authed/import")({
+export const Route = createFileRoute("/import")({
   head: () => ({
     meta: [
       { title: "Import questions — TestBench" },
-      { name: "description", content: "Import questions from a URL, paste text, or generate them with AI." },
+      {
+        name: "description",
+        content: "Import questions from a URL, paste text, or generate them with AI.",
+      },
     ],
   }),
   component: Import,
@@ -49,6 +53,7 @@ Topic: Programming`;
 
 function Import() {
   const navigate = useNavigate();
+  const { data: session } = useSession();
   const [mode, setMode] = useState<Mode>("url");
 
   // Paste (strict parser first, AI cleanup as fallback/override)
@@ -119,7 +124,7 @@ function Import() {
 
   const handleSave = async () => {
     if (previewQs.length === 0) return;
-    const { id } = await createSet({ data: { name: setName(), questions: previewQs } });
+    const { id } = await saveQuestionSet(!!session?.user, setName(), previewQs);
     navigate({ to: "/configure/$setId", params: { setId: id } });
   };
 
@@ -171,7 +176,9 @@ function Import() {
       {/* ---------- URL ---------- */}
       {mode === "url" && (
         <div className="mt-5 rounded-[10px] border border-border bg-surface p-5">
-          <label className="block text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Page URL</label>
+          <label className="block text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+            Page URL
+          </label>
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -187,7 +194,11 @@ function Import() {
             className="btn-press mt-4 inline-flex h-10 items-center gap-2 rounded-[8px] bg-accent px-4 text-[13px] font-medium text-accent-foreground disabled:opacity-50"
           >
             {busy && <Loader2 size={14} className="animate-spin" />}
-            {busy ? (urlStage === "scraping" ? "Scraping & extracting…" : "Working…") : "Extract questions"}
+            {busy
+              ? urlStage === "scraping"
+                ? "Scraping & extracting…"
+                : "Working…"
+              : "Extract questions"}
           </button>
           {err && <p className="mt-3 text-[12.5px] text-danger">{err}</p>}
         </div>
@@ -209,8 +220,9 @@ function Import() {
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[12px] text-muted-foreground">
-              Paste any format — structured (options A–D, then <span className="font-mono">Answer:</span>) parses
-              instantly for free, or messy/unstructured text can be cleaned up with AI.
+              Paste any format — structured (options A–D, then{" "}
+              <span className="font-mono">Answer:</span>) parses instantly for free, or
+              messy/unstructured text can be cleaned up with AI.
             </p>
             <div className="flex items-center gap-3">
               <button
@@ -235,7 +247,8 @@ function Import() {
 
           {!aiCleaned && raw.trim().length > 0 && parsed.length === 0 && (
             <p className="text-[12.5px] text-danger">
-              Couldn't parse any questions from the format above. Try "Clean up with AI" below instead.
+              Couldn't parse any questions from the format above. Try "Clean up with AI" below
+              instead.
             </p>
           )}
 
@@ -267,7 +280,9 @@ function Import() {
       {/* ---------- Generate ---------- */}
       {mode === "generate" && (
         <div className="mt-5 rounded-[10px] border border-border bg-surface p-5">
-          <label className="block text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Topic</label>
+          <label className="block text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+            Topic
+          </label>
           <input
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
@@ -277,11 +292,15 @@ function Import() {
 
           <div className="mt-5 flex flex-wrap items-center gap-6">
             <div>
-              <div className="mb-1.5 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Count</div>
+              <div className="mb-1.5 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+                Count
+              </div>
               <Slider value={count} onChange={setCount} min={3} max={50} />
             </div>
             <div>
-              <div className="mb-1.5 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Difficulty</div>
+              <div className="mb-1.5 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+                Difficulty
+              </div>
               <SegmentedControl
                 value={difficulty}
                 onChange={setDifficulty}
@@ -310,7 +329,9 @@ function Import() {
       {previewQs.length > 0 && (mode !== "paste" || aiCleaned) && (
         <div className="mt-8">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Preview</h2>
+            <h2 className="text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+              Preview
+            </h2>
             <span className="text-[12px] text-muted-foreground">{previewQs.length} questions</span>
           </div>
           <ul className="space-y-2.5">

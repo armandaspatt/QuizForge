@@ -26,3 +26,22 @@ export const requireAuth = createMiddleware({ type: "function" }).server(async (
     },
   });
 });
+
+/**
+ * Like `requireAuth`, but never throws. Attaches `userId`/`userEmail` when a
+ * session exists, otherwise `null`. Use this for server functions that have
+ * both a saved (DB, per-user) and an anonymous (caller-supplied, ephemeral)
+ * path — e.g. quiz-taking, which works without an account but persists for
+ * users who are signed in.
+ */
+export const optionalAuth = createMiddleware({ type: "function" }).server(async ({ next }) => {
+  const request = getRequest();
+  const session = await auth.api.getSession({ headers: request.headers });
+
+  return next({
+    context: {
+      userId: session?.user?.id ?? null,
+      userEmail: session?.user?.email ?? null,
+    },
+  });
+});

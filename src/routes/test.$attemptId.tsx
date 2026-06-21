@@ -7,11 +7,16 @@ import { OptionButton } from "@/components/OptionButton";
 import { QuestionPalette, type PaletteState } from "@/components/QuestionPalette";
 import { HintPanel } from "@/components/HintPanel";
 import { RichText } from "@/components/RichText";
-import { getSet } from "@/lib/sets.functions";
-import { getAttempt, saveAttemptProgress, finishAttempt } from "@/lib/attempts.functions";
+import {
+  loadQuestionSet,
+  loadQuizAttempt,
+  saveQuizProgress,
+  finishQuizAttempt,
+} from "@/lib/local-data";
+import { useSession } from "@/lib/auth-client";
 import type { Attempt, Question, QuestionSet } from "@/lib/types";
 
-export const Route = createFileRoute("/_authed/test/$attemptId")({
+export const Route = createFileRoute("/test/$attemptId")({
   head: () => ({
     meta: [{ title: "Test in progress — TestBench" }],
   }),
@@ -23,6 +28,7 @@ const LETTERS = ["A", "B", "C", "D"];
 function TestRunner() {
   const { attemptId } = Route.useParams();
   const navigate = useNavigate();
+  const { data: session, isPending: sessionPending } = useSession();
 
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [set, setSet] = useState<QuestionSet | null>(null);
@@ -38,13 +44,15 @@ function TestRunner() {
 
   // Load attempt + set
   useEffect(() => {
-    getAttempt({ data: { id: attemptId } }).then(async (a) => {
+    if (sessionPending) return;
+    const hasSession = !!session?.user;
+    loadQuizAttempt(hasSession, attemptId).then(async (a) => {
       if (!a) return;
       setAttempt(a);
-      const s = await getSet({ data: { id: a.setId } });
+      const s = await loadQuestionSet(hasSession, a.setId);
       if (s) setSet(s);
     });
-  }, [attemptId]);
+  }, [attemptId, sessionPending, session?.user]);
 
   // Tick
   useEffect(() => {
@@ -77,18 +85,16 @@ function TestRunner() {
     const a = pendingSave.current;
     pendingSave.current = null;
     if (!a) return Promise.resolve();
-    return saveAttemptProgress({
-      data: {
-        id: a.id,
-        answers: a.answers,
-        locked: a.locked,
-        flags: a.flags,
-        hintsUsed: a.hintsUsed,
-        perQuestionMs: a.perQuestionMs,
-        timeRemainingMs: a.timeRemainingMs,
-      },
+    return saveQuizProgress(!!session?.user, {
+      id: a.id,
+      answers: a.answers,
+      locked: a.locked,
+      flags: a.flags,
+      hintsUsed: a.hintsUsed,
+      perQuestionMs: a.perQuestionMs,
+      timeRemainingMs: a.timeRemainingMs,
     });
-  }, []);
+  }, [session?.user]);
 
   const persist = useCallback(
     (next: Attempt) => {
@@ -111,14 +117,15 @@ function TestRunner() {
     // Capture per-question time for current question
     next.perQuestionMs = {
       ...next.perQuestionMs,
-      [questions[idx]?.id ?? ""]: (next.perQuestionMs[questions[idx]?.id ?? ""] ?? 0) + (Date.now() - questionStart.current),
+      [questions[idx]?.id ?? ""]:
+        (next.perQuestionMs[questions[idx]?.id ?? ""] ?? 0) + (Date.now() - questionStart.current),
     };
     setAttempt(next);
     pendingSave.current = next;
     await flushSave(); // make sure the last answer is saved before scoring
-    await finishAttempt({ data: { id: next.id } });
+    await finishQuizAttempt(!!session?.user, next.id);
     navigate({ to: "/results/$attemptId", params: { attemptId: next.id } });
-  }, [attempt, idx, navigate, questions, flushSave]);
+  }, [attempt, idx, navigate, questions, flushSave, session?.user]);
 
   const q = questions[idx];
   const selected = q ? attempt?.answers[q.id] : undefined;
@@ -215,7 +222,8 @@ function TestRunner() {
     const next: Attempt = { ...attempt, hintsUsed: { ...attempt.hintsUsed, [q.id]: true } };
     if (rules.hints.penalty === "time") {
       if (rules.timing.mode === "total") totalOffset.current += rules.hints.penaltyAmount;
-      else if (rules.timing.mode === "per-question") segmentOffset.current += rules.hints.penaltyAmount;
+      else if (rules.timing.mode === "per-question")
+        segmentOffset.current += rules.hints.penaltyAmount;
     }
     persist(next);
   };
@@ -244,7 +252,6 @@ function TestRunner() {
     );
   }
 
-
   const paletteStates: PaletteState[] = questions.map((qq, i) => {
     const ans = attempt.answers[qq.id];
     if (i === idx) return "current";
@@ -260,7 +267,9 @@ function TestRunner() {
     <Shell>
       <header className="flex items-start justify-between gap-4 pt-2">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.10em] text-muted-foreground">{set.name}</div>
+          <div className="text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+            {set.name}
+          </div>
           <div className="mt-1 text-[14px] text-foreground">
             Question <span className="font-mono">{idx + 1}</span>
             <span className="text-muted-foreground"> / {questions.length}</span>
@@ -278,7 +287,10 @@ function TestRunner() {
         )}
       </header>
 
-      <article className="mt-8 rounded-[10px] border border-border bg-surface p-7 fade-in-soft" key={q.id}>
+      <article
+        className="mt-8 rounded-[10px] border border-border bg-surface p-7 fade-in-soft"
+        key={q.id}
+      >
         <div className="text-[18px] font-normal leading-relaxed text-foreground">
           <RichText text={q.prompt} />
         </div>
@@ -304,9 +316,7 @@ function TestRunner() {
           })}
         </div>
 
-        {rules.hints.enabled && (
-          <HintPanel open={showHint} text={q.hint} />
-        )}
+        {rules.hints.enabled && <HintPanel open={showHint} text={q.hint} />}
       </article>
 
       <div className="mt-5 flex items-center justify-between gap-2">
@@ -322,7 +332,15 @@ function TestRunner() {
           <button
             onClick={toggleFlag}
             className="btn-press inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-border bg-surface px-3 text-[13px] text-foreground"
-            style={flagged ? { backgroundColor: "var(--warning-tint)", borderColor: "var(--warning)", color: "var(--warning)" } : undefined}
+            style={
+              flagged
+                ? {
+                    backgroundColor: "var(--warning-tint)",
+                    borderColor: "var(--warning)",
+                    color: "var(--warning)",
+                  }
+                : undefined
+            }
           >
             <Flag size={14} /> {flagged ? "Flagged" : "Flag"}
           </button>
@@ -335,7 +353,8 @@ function TestRunner() {
               <Lightbulb size={14} /> Hint
               {rules.hints.penalty !== "none" && (
                 <span className="font-mono text-[11px] text-muted-foreground">
-                  −{rules.hints.penaltyAmount}{rules.hints.penalty === "time" ? "s" : "m"}
+                  −{rules.hints.penaltyAmount}
+                  {rules.hints.penalty === "time" ? "s" : "m"}
                 </span>
               )}
             </button>
@@ -351,7 +370,9 @@ function TestRunner() {
       </div>
 
       <div className="mt-8 rounded-[10px] border border-border bg-surface px-4 py-3">
-        <div className="mb-2 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Questions</div>
+        <div className="mb-2 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+          Questions
+        </div>
         <QuestionPalette states={paletteStates} onJump={(i) => setIdx(i)} />
       </div>
     </Shell>

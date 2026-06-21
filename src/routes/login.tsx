@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
 import { Wordmark } from "@/components/Wordmark";
 import { signIn, signUp } from "@/lib/auth-client";
 
@@ -8,11 +9,15 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [{ title: "Sign in — TestBench" }],
   }),
+  validateSearch: z.object({
+    redirect: z.string().optional(),
+  }),
   component: Login,
 });
 
 function Login() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,7 +39,7 @@ function Login() {
         setErr(result.error.message ?? "Something went wrong.");
         return;
       }
-      navigate({ to: "/dashboard" });
+      navigate({ to: redirect || "/dashboard" });
     } finally {
       setBusy(false);
     }

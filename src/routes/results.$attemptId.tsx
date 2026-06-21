@@ -1,13 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, X, LogIn } from "lucide-react";
 import { Shell } from "@/components/Shell";
 import { OptionButton } from "@/components/OptionButton";
-import { getSet } from "@/lib/sets.functions";
-import { getAttempt } from "@/lib/attempts.functions";
+import { loadQuestionSet, loadQuizAttempt } from "@/lib/local-data";
+import { useSession } from "@/lib/auth-client";
 import type { Attempt, Question, QuestionSet } from "@/lib/types";
 
-export const Route = createFileRoute("/_authed/results/$attemptId")({
+export const Route = createFileRoute("/results/$attemptId")({
   head: () => ({
     meta: [{ title: "Results — TestBench" }],
   }),
@@ -19,22 +19,31 @@ const LETTERS = ["A", "B", "C", "D"];
 function Results() {
   const { attemptId } = Route.useParams();
   const navigate = useNavigate();
+  const { data: session, isPending: sessionPending } = useSession();
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [set, setSet] = useState<QuestionSet | null>(null);
 
   useEffect(() => {
-    getAttempt({ data: { id: attemptId } }).then(async (a) => {
+    if (sessionPending) return;
+    const hasSession = !!session?.user;
+    loadQuizAttempt(hasSession, attemptId).then(async (a) => {
       if (!a) return;
       setAttempt(a);
-      const s = await getSet({ data: { id: a.setId } });
+      const s = await loadQuestionSet(hasSession, a.setId);
       if (s) setSet(s);
     });
-  }, [attemptId]);
+  }, [attemptId, sessionPending, session?.user]);
 
   const summary = useMemo(() => {
     if (!attempt || !set) return null;
-    const qs: Question[] = attempt.questionIds.map((id) => set.questions.find((q) => q.id === id)!).filter(Boolean);
-    let correct = 0, wrong = 0, unanswered = 0, hints = 0, totalMs = 0;
+    const qs: Question[] = attempt.questionIds
+      .map((id) => set.questions.find((q) => q.id === id)!)
+      .filter(Boolean);
+    let correct = 0,
+      wrong = 0,
+      unanswered = 0,
+      hints = 0,
+      totalMs = 0;
     for (const q of qs) {
       const ans = attempt.answers[q.id];
       if (ans == null) unanswered++;
@@ -59,7 +68,11 @@ function Results() {
       byTopic.set(q.topic, t);
     }
     const topics = Array.from(byTopic.entries())
-      .map(([topic, v]) => ({ topic, ...v, pct: v.total ? Math.round((v.correct / v.total) * 100) : 0 }))
+      .map(([topic, v]) => ({
+        topic,
+        ...v,
+        pct: v.total ? Math.round((v.correct / v.total) * 100) : 0,
+      }))
       .sort((a, b) => b.pct - a.pct);
 
     return { qs, correct, wrong, unanswered, hints, totalMs, score, maxScore, topics };
@@ -78,7 +91,8 @@ function Results() {
       <div className="pt-4">
         <div className="text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Results</div>
         <h1 className="mt-1 text-[26px] font-medium tracking-tight">
-          {summary.score.toFixed(2)}<span className="text-muted-foreground"> / {summary.maxScore}</span>
+          {summary.score.toFixed(2)}
+          <span className="text-muted-foreground"> / {summary.maxScore}</span>
         </h1>
         <p className="mt-1 text-[13px] text-muted-foreground">
           {set.name} · {Math.round(summary.totalMs / 1000)}s total
@@ -93,13 +107,19 @@ function Results() {
       </div>
 
       <section className="mt-10">
-        <h2 className="mb-3 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">By topic</h2>
+        <h2 className="mb-3 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+          By topic
+        </h2>
         <ul className="space-y-2.5">
           {summary.topics.map((t, i) => {
-            const color = t.pct >= 70 ? "var(--success)" : t.pct >= 40 ? "var(--warning)" : "var(--danger)";
+            const color =
+              t.pct >= 70 ? "var(--success)" : t.pct >= 40 ? "var(--warning)" : "var(--danger)";
             return (
               <li key={t.topic} className="flex items-center gap-3">
-                <span className="inline-block size-2 rounded-full" style={{ backgroundColor: color }} />
+                <span
+                  className="inline-block size-2 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
                 <div className="flex-1">
                   <div className="flex items-baseline justify-between">
                     <span className="text-[13px] text-foreground">{t.topic}</span>
@@ -124,7 +144,9 @@ function Results() {
       </section>
 
       <section className="mt-10">
-        <h2 className="mb-3 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Review</h2>
+        <h2 className="mb-3 text-[11px] uppercase tracking-[0.10em] text-muted-foreground">
+          Review
+        </h2>
         <ul className="space-y-4">
           {summary.qs.map((q, i) => {
             const ans = attempt.answers[q.id];
@@ -132,9 +154,14 @@ function Results() {
             return (
               <li key={q.id} className="rounded-[10px] border border-border bg-surface p-5">
                 <div className="flex items-baseline gap-2">
-                  <span className="font-mono text-[11px] text-muted-foreground">{(i + 1).toString().padStart(2, "0")}</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {(i + 1).toString().padStart(2, "0")}
+                  </span>
                   <span className="text-[14.5px] text-foreground">{q.prompt}</span>
-                  <span className="ml-auto inline-flex items-center gap-1 text-[12px]" style={{ color: isCorrect ? "var(--success)" : "var(--danger)" }}>
+                  <span
+                    className="ml-auto inline-flex items-center gap-1 text-[12px]"
+                    style={{ color: isCorrect ? "var(--success)" : "var(--danger)" }}
+                  >
                     {isCorrect ? <Check size={13} /> : <X size={13} />}
                     {isCorrect ? "Correct" : ans == null ? "Skipped" : "Wrong"}
                   </span>
@@ -165,6 +192,21 @@ function Results() {
         </ul>
       </section>
 
+      {!session?.user && (
+        <div className="mt-8 flex items-center justify-between gap-3 rounded-[10px] border border-border bg-[var(--surface-2)] px-4 py-3">
+          <p className="text-[13px] text-muted-foreground">
+            Sign in to save this set and track your progress over time.
+          </p>
+          <Link
+            to="/login"
+            search={{ redirect: `/results/${attemptId}` }}
+            className="btn-press inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] bg-accent px-3 text-[12.5px] font-medium text-accent-foreground"
+          >
+            <LogIn size={13} strokeWidth={1.75} /> Sign in
+          </Link>
+        </div>
+      )}
+
       <div className="mt-8 flex gap-2">
         <button
           onClick={() => navigate({ to: "/configure/$setId", params: { setId: set.id } })}
@@ -173,7 +215,7 @@ function Results() {
           Retake
         </button>
         <Link
-          to="/sets"
+          to={session?.user ? "/sets" : "/"}
           className="btn-press inline-flex h-10 items-center rounded-[8px] border border-border bg-surface px-4 text-[13px] text-foreground"
         >
           Home
