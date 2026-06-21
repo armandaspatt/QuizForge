@@ -1,9 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import { Shell } from "@/components/Shell";
-import { deleteSet, getSets } from "@/lib/store";
-import type { QuestionSet } from "@/lib/types";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
+import { Wordmark } from "@/components/Wordmark";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,75 +16,52 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const navigate = useNavigate();
-  const [sets, setSets] = useState<QuestionSet[]>([]);
-
-  useEffect(() => {
-    setSets(getSets());
-  }, []);
-
-  const removeSet = (id: string) => {
-    deleteSet(id);
-    setSets(getSets());
-  };
-
   return (
-    <Shell>
-      <section className="pt-6">
-        <h1 className="text-[26px] font-medium leading-tight tracking-tight text-foreground">
-          Build a test, your way.
-        </h1>
-        <p className="mt-2 max-w-xl text-[14px] text-muted-foreground">
-          Generate questions from a topic, or paste your own. You set the timing, marking, hints, and feedback rules.
-        </p>
-      </section>
-
-      <Link
-        to="/import"
-        className="btn-press fade-in-soft mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[8px] bg-accent text-[14px] font-medium text-accent-foreground hover:opacity-95"
-      >
-        <Plus size={16} strokeWidth={1.75} /> Create new test
-      </Link>
-
-      <section className="mt-10">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-[11px] uppercase tracking-[0.10em] text-muted-foreground">Question sets</h2>
-          <span className="text-[12px] text-muted-foreground">{sets.length} saved</span>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="mx-auto flex max-w-3xl items-center justify-between px-6 pt-6 pb-3">
+        <Wordmark />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            to="/login"
+            className="btn-press rounded-md px-3 py-1.5 text-[13px] text-muted-foreground hover:text-foreground hover:bg-[color-mix(in_oklab,var(--accent)_4%,transparent)]"
+          >
+            Sign in
+          </Link>
         </div>
+      </header>
 
-        {sets.length === 0 ? (
-          <div className="rounded-[10px] border border-dashed border-border bg-surface/40 px-5 py-10 text-center text-[13px] text-muted-foreground">
-            No question sets yet. Create one to get started.
-          </div>
-        ) : (
-          <ul className="space-y-2.5">
-            {sets.map((s) => (
-              <li
-                key={s.id}
-                className="lift-hover group relative flex items-center justify-between gap-3 rounded-[10px] border border-border bg-surface px-4 py-3.5"
-                style={{ borderLeft: "2px solid var(--accent)" }}
-              >
-                <button
-                  onClick={() => navigate({ to: "/configure/$setId", params: { setId: s.id } })}
-                  className="flex-1 text-left btn-press"
-                >
-                  <div className="text-[14px] text-foreground">{s.name}</div>
-                  <div className="mt-0.5 text-[12px] text-muted-foreground">
-                    {s.questions.length} questions · {new Date(s.createdAt).toLocaleDateString()}
-                  </div>
-                </button>
-                <button
-                  onClick={() => removeSet(s.id)}
-                  aria-label="Delete set"
-                  className="btn-press inline-flex h-8 w-8 items-center justify-center rounded-[6px] text-muted-foreground opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
-                >
-                  <Trash2 size={14} strokeWidth={1.5} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </Shell>
+      <main className="mx-auto max-w-3xl px-6 pt-14 pb-24 fade-in-soft">
+        <h1 className="max-w-xl text-[32px] font-medium leading-tight tracking-tight text-foreground">
+          Build a multiple choice test, your way.
+        </h1>
+        <p className="mt-3 max-w-lg text-[15px] text-muted-foreground">
+          Paste your own questions, generate them from a topic, or pull from a web page. Set the timing, marking,
+          and feedback rules yourself, then take the test.
+        </p>
+
+        <Link
+          to="/login"
+          className="btn-press mt-7 inline-flex h-11 items-center gap-2 rounded-[8px] bg-accent px-5 text-[14px] font-medium text-accent-foreground hover:opacity-95"
+        >
+          Get started <ArrowRight size={15} strokeWidth={1.75} />
+        </Link>
+
+        <ul className="mt-14 grid gap-4 sm:grid-cols-3">
+          <Feature title="Bring your own questions" body="Paste any format — the parser handles structured text instantly, or clean up messy text with AI." />
+          <Feature title="Set your own rules" body="Timing, negative marking, hints, and when correctness is revealed — all configurable per test." />
+          <Feature title="Track what's weak" body="A dashboard breaks down performance by topic across every attempt you've taken." />
+        </ul>
+      </main>
+    </div>
+  );
+}
+
+function Feature({ title, body }: { title: string; body: string }) {
+  return (
+    <li className="rounded-[10px] border border-border bg-surface px-4 py-4">
+      <div className="text-[13.5px] font-medium text-foreground">{title}</div>
+      <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">{body}</p>
+    </li>
   );
 }
