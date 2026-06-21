@@ -135,12 +135,15 @@ function TestRunner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elapsedSec, totalSec, rules?.timing.mode]);
 
-  const choose = (i: number) => {
-    if (!attempt || !q || !rules) return;
-    if (locked && !rules.reattempt) return;
-    const next: Attempt = { ...attempt, answers: { ...attempt.answers, [q.id]: i } };
-    persist(next);
-  };
+const choose = (i: number) => {
+  if (!attempt || !q || !rules) return;
+  if (locked && !rules.reattempt) return;
+  const next: Attempt = { ...attempt, answers: { ...attempt.answers, [q.id]: i } };
+  if (rules.feedback === "realtime") {
+    next.locked = { ...next.locked, [q.id]: true };
+  }
+  persist(next);
+};
 
   const advance = (dir: 1 | -1) => {
     if (!attempt || !q || !rules) return;
